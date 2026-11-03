@@ -58,10 +58,11 @@ export const RegisterPage: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1">
-            <span className="text-xs font-semibold text-slate-700">Full Name</span>
+            <label htmlFor="reg-name" className="block text-xs font-semibold text-slate-700">Full Name</label>
             <div className="relative">
               <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
+                id="reg-name"
                 type="text"
                 required
                 value={name}
@@ -73,10 +74,11 @@ export const RegisterPage: React.FC = () => {
           </div>
 
           <div className="space-y-1">
-            <span className="text-xs font-semibold text-slate-700">Email Address</span>
+            <label htmlFor="reg-email" className="block text-xs font-semibold text-slate-700">Email Address</label>
             <div className="relative">
               <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
+                id="reg-email"
                 type="email"
                 required
                 value={email}
@@ -88,10 +90,11 @@ export const RegisterPage: React.FC = () => {
           </div>
 
           <div className="space-y-1">
-            <span className="text-xs font-semibold text-slate-700">Phone Number</span>
+            <label htmlFor="reg-phone" className="block text-xs font-semibold text-slate-700">Phone Number</label>
             <div className="relative">
               <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
+                id="reg-phone"
                 type="tel"
                 required
                 value={phone}
@@ -103,10 +106,11 @@ export const RegisterPage: React.FC = () => {
           </div>
 
           <div className="space-y-1">
-            <span className="text-xs font-semibold text-slate-700">Password (min 6 chars)</span>
+            <label htmlFor="reg-password" className="block text-xs font-semibold text-slate-700">Password (min 6 chars)</label>
             <div className="relative">
               <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
               <input
+                id="reg-password"
                 type="password"
                 required
                 minLength={6}

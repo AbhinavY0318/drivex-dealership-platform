@@ -58,6 +58,7 @@ export interface VehicleVariant {
   torqueNm: number;
   mileageKmpl: number;
   seatingCapacity: number;
+  safetyRating?: string;
   colors: VehicleColor[];
   features: string[];
   images: string[];
