@@ -129,8 +129,10 @@ npm run test --workspace=server -- --watch
    - Password encryption: verifies bcrypt salt hashing on storage.
 5. **`e2eWorkflow.test.ts` (8 tests):**
    - Full customer lifecycle: model discovery $\rightarrow$ on-road price calculation $\rightarrow$ test-drive booking $\rightarrow$ enquiry submission $\rightarrow$ deterministic auto-assignment $\rightarrow$ sales consultant login $\rightarrow$ AI first-reply draft retrieval $\rightarrow$ lead status progression to `CONVERTED`.
+6. **`productionReadiness.test.ts` (9 tests):**
+   - Production edge cases: concurrent demo vehicle booking prevention with atomic compound unique indexes, graceful unassigned queue routing when all staff are offline, consultant auto-rebalancing upon unavailability, immutable lead pricing snapshots, expired pricing detection with customer disclaimers, DPDP customer consent enforcement, AI timeout & malformed JSON fallbacks, consultant lead ownership RBAC isolation (HTTP 403), and public vehicle registration sanitization (`UP32**1234`).
 
-**Total Test Score:** 27 passed out of 27 executed.
+**Total Test Score:** 36 passed out of 36 executed (100% Passed across 6 suites).
 
 ---
 

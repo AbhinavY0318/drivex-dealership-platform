@@ -148,12 +148,20 @@
       font-size: 9pt;
       color: #475569;
     }
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 6px;
+      border: 1px solid #cbd5e1;
+      margin: 10px 0 16px 0;
+      page-break-inside: avoid;
+    }
   </style>
 </head>
 <body>
   <h1>Technical Design Document (TDD)</h1>
 <h2>DriveX – Automotive Dealership Commerce &amp; Lead Management Platform</h2>
-<p><strong>Document Version:</strong> 1.0.0<br><strong>Target Client:</strong> Authorized Passenger Car Dealership (Lucknow, Uttar Pradesh, India)<br><strong>Dealership Scale:</strong> 3 Showrooms, 2 Service Workshops, 1 Certified Used-Car Yard, 340 Staff<br><strong>Author:</strong> Principal Full-Stack Software Architect &amp; Systems Engineering Team<br><strong>Date:</strong> March 2026<br><strong>Status:</strong> Approved for Production Deployment  </p>
+<p><strong>GitHub Repository:</strong> <a href="https://github.com/client-org/drivex">https://github.com/client-org/drivex</a> <em>(Local Workspace: <code>d:\DriveX</code>, Git Branch: <code>master</code>)</em><br><strong>Document Version:</strong> 1.0.0<br><strong>Target Client:</strong> Authorized Passenger Car Dealership (Lucknow, Uttar Pradesh, India)<br><strong>Dealership Scale:</strong> 3 Showrooms, 2 Service Workshops, 1 Certified Used-Car Yard, 340 Staff<br><strong>Author:</strong> Principal Full-Stack Software Architect &amp; Systems Engineering Team<br><strong>Date:</strong> March 2026<br><strong>Status:</strong> Approved for Production Deployment  </p>
 <hr>
 <h2>Table of Contents</h2>
 <ol>
@@ -206,6 +214,7 @@
 <li><strong>WhatsApp-Driven Used Inventory:</strong> Certified used-car inventory was informally circulated via WhatsApp groups, lacking standardization and violating customer privacy.</li>
 </ol>
 <p>DriveX replaces these fragmented processes with a cohesive, end-to-end MERN architecture designed to fulfill strict enterprise automotive standards.</p>
+<p><img src="./screenshots/homepage.png" alt="DriveX Homepage - Luxury Automotive Showroom"></p>
 <hr>
 <h2>2. Business Objectives &amp; Strategic Alignment</h2>
 <pre><code>┌─────────────────────────────────────────────────────────────────────────────┐
@@ -428,6 +437,8 @@
 <li><strong>FASTag &amp; Registration Cess:</strong> ₹1,700</li>
 <li><strong>Total On-Road Price:</strong> <strong>₹14,23,060</strong></li>
 </ul>
+<p><img src="./screenshots/new_cars.png" alt="DriveX New Vehicle Catalog">
+<img src="./screenshots/vehicle_details.png" alt="DriveX Vehicle Details &amp; Dynamic On-Road Price Breakup"></p>
 <blockquote>
 <p>[!IMPORTANT]
 <strong>Legal Disclaimer &amp; Historical Immutability:</strong><br>All on-road calculations explicitly include validity dates (<code>validUntil</code>) and standard dealer disclaimers: <em>&quot;Prices shown are indicative demonstration figures for Uttar Pradesh and subject to government tax revisions at the time of invoicing.&quot;</em><br>When an enquiry or booking is submitted, the complete pricing breakdown is serialized and stored as an immutable <code>pricingSnapshot</code> inside the lead document. Subsequent administrative changes to tax rates never silently alter historical lead or booking contracts.</p>
@@ -493,6 +504,7 @@
 <li><strong>Suspension, Steering &amp; Brakes (25 pts):</strong> Shock absorber damping, tie rod play, disc brake rotor thickness, ABS pump actuation.</li>
 <li><strong>Interior, Exterior &amp; Safety (25 pts):</strong> Paint depth gauge (DFT), tire tread depth (&gt; 4.5mm), seatbelt pretensioners, climate control efficiency.</li>
 </ol>
+<p><img src="./screenshots/used_cars.png" alt="DriveX Certified Used Cars Marketplace"></p>
 <hr>
 <h2>8. Test-Drive Booking Engine &amp; Concurrency Control</h2>
 <p>Booking test drives online requires robust concurrency guarantees to eliminate double-booking of demo vehicles across showrooms.</p>
@@ -506,20 +518,28 @@
     COMPLETED --&gt; [*]
     CANCELLED --&gt; [*]
 </code></pre>
-<h3>B. Atomic Collision Prevention</h3>
-<p>Double-booking prevention is enforced at both the database and transaction level:</p>
+<h3>B. Atomic Collision Prevention &amp; Concurrency Handling</h3>
+<p>Double-booking prevention is enforced at both the database schema level and the transactional application boundary:</p>
 <ol>
-<li><strong>Compound Unique Index:</strong><pre><code class="language-javascript">testDriveSchema.index(
-  { demoVehicleId: 1, bookingDate: 1, timeSlot: 1, status: 1 },
-  { unique: false }
+<li><strong>Compound Partial Unique Index:</strong><pre><code class="language-typescript">TestDriveBookingSchema.index(
+  { showroomId: 1, vehicleModelId: 1, bookingDate: 1, timeSlot: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { status: { $in: [&#39;PENDING&#39;, &#39;CONFIRMED&#39;] } },
+  }
 );
 </code></pre>
 </li>
-<li><strong>Atomic Verification Query:</strong>
-Prior to creating a reservation, the booking service performs an atomic query checking for existing active reservations (<code>[&#39;PENDING&#39;, &#39;CONFIRMED&#39;]</code>) for the identical <code>demoVehicleId</code>, <code>bookingDate</code>, and <code>timeSlot</code>.</li>
+<li><strong>Atomic Collision Handling:</strong><ul>
+<li><strong>Pre-Flight Conflict Inspection:</strong> Prior to saving, the booking service inspects active reservations (<code>status: { $in: [&#39;PENDING&#39;, &#39;CONFIRMED&#39;] }</code>) for the target showroom, vehicle model, date, and slot.</li>
+<li><strong>Database-Enforced Race Prevention:</strong> In simultaneous race conditions (e.g. two customers submitting at the exact same millisecond via <code>Promise.allSettled</code>), MongoDB&#39;s storage engine enforces uniqueness on the partial compound index. Exactly one reservation completes; the colliding document triggers an <code>E11000</code> duplicate key exception, which the service catches and translates into a friendly business conflict message (<code>Selected slot has already been reserved</code>).</li>
+<li><strong>Slot Release on Cancellation:</strong> Because the index is a partial index filtered on <code>[&#39;PENDING&#39;, &#39;CONFIRMED&#39;]</code>, when a test drive is cancelled (<code>CANCELLED</code>), the slot is atomically released and immediately becomes bookable for other customers.</li>
+</ul>
+</li>
 <li><strong>Past Date Rejection:</strong>
-Requests for historical dates or elapsed slots on the current date are strictly rejected with HTTP 400.</li>
+Requests for historical dates or elapsed slots on the current date are strictly rejected with HTTP 400 Bad Request.</li>
 </ol>
+<p><img src="./screenshots/test_drive.png" alt="DriveX Test Drive Booking Concierge"></p>
 <hr>
 <h2>9. Deterministic Lead Auto-Assignment Strategy</h2>
 <p>A core client objective is ensuring every digital lead is assigned to a sales consultant within seconds. Random assignment creates unfair workload distributions and customer dissatisfaction. DriveX implements a <strong>Workload-Balanced, Deterministic Routing Algorithm</strong>.</p>
@@ -637,6 +657,7 @@ return {
 </li>
 <li><strong>Manager Reassignment Modal:</strong> Allows reallocating leads to another available consultant with mandatory reason logging.</li>
 </ol>
+<p><img src="./screenshots/crm_inbox.png" alt="DriveX Sales Consultant CRM &amp; Quick Login Concierge"></p>
 <hr>
 <h2>13. Centralized Dealership Administration CMS</h2>
 <p>The Admin Dashboard (<code>/admin</code>) provides executive oversight and catalog configuration.</p>
@@ -941,13 +962,19 @@ return {
 <li><strong>Public API Registration Number Sanitization:</strong> In accordance with customer privacy rules, all public used-vehicle queries strictly mask registration identifiers (e.g. <code>UP32**1234</code>), with raw registration numbers restricted to authenticated administrators.</li>
 </ol>
 <hr>
-<h2>20. Implementation Assumptions &amp; Trade-Offs</h2>
+<h2>20. Implementation Assumptions, Scope Exclusions &amp; Trade-Offs</h2>
+<h3>A. Labeled Engineering Assumptions</h3>
 <ol>
-<li><strong>Tax Rates as Demonstration Values:</strong> State road tax (8%), insurance (3.8%), and dealer accessories are modeled as demonstration values rather than statutory legal advice, with explicit disclaimers in accordance with client instructions.</li>
-<li><strong>Masked Used-Car Registrations:</strong> Public APIs mask registrations to <code>UP32**1234</code>. The full registration number is accessible only to authenticated dealership administrators.</li>
-<li><strong>Mock SMS / WhatsApp Notifications:</strong> Acknowledgement messages and SLA alerts are recorded in the dealership notification collection and audit timeline; third-party SMS gateway integration (e.g. Twilio, Gupshup) is stubbed for production staging.</li>
-<li><strong>Mock Payment Gateways:</strong> Test drives and vehicle bookings do not charge upfront booking fees; reservation tokens are generated without third-party payment gateway redirections.</li>
-<li><strong>Admin System Role:</strong> In addition to BUYER and SALES_CONSULTANT, the ADMIN role was implemented to enable catalog governance, pricing slab configuration, and team workload balancing.</li>
+<li><strong>Demonstration Tax &amp; Statutory Levy Slabs:</strong> Statutory levies such as Uttar Pradesh RTO road tax (8.0%), zero-depreciation insurance (3.8%), TCS (1.0% above ₹10 Lakh), and dealer accessories are modeled with demonstration baseline values rather than statutory legal advice, in accordance with the client assessment guidelines. All pricing outputs display explicit validity dates and customer disclaimers.</li>
+<li><strong>Regional City Matrix:</strong> Calculations are seeded for Lucknow (dealership headquarters), Kanpur, Ayodhya, and Varanasi to demonstrate multi-city dynamic road tax and cess variances.</li>
+<li><strong>Data Privacy Masking (DPDP Act 2023):</strong> Used vehicle registration numbers are masked as <code>UP32**1234</code> on all public REST API endpoints and web client interfaces, restricting raw registration numbers exclusively to authenticated dealership administrators.</li>
+<li><strong>Zero-Config Developer Experience:</strong> The persistence layer automatically provisions an in-memory <code>MongoMemoryServer</code> if <code>MONGODB_URI</code> is omitted from the environment, enabling seamless local assessment without requiring an external MongoDB service.</li>
+</ol>
+<h3>B. Explicit Scope Exclusions</h3>
+<ol>
+<li><strong>Live Payment Gateways &amp; Banking Rails:</strong> Third-party payment gateways (Razorpay, Paytm, UPI) and payment processing are excluded in accordance with the project brief. Test-drive bookings generate secure reservation tokens and confirmations without charging upfront fees.</li>
+<li><strong>Third-Party Telephony &amp; SMS Gateways:</strong> External SMS/WhatsApp gateways (e.g. Twilio, Gupshup) are stubbed with internal notification logs and audit timeline entries rather than incurring external per-message carrier fees.</li>
+<li><strong>Multi-Franchise Commercial Tenancy:</strong> The platform is architected and optimized for this specific authorized dealership enterprise (3 showrooms, 2 workshops, 1 yard) rather than a multi-franchise multi-tenant SaaS.</li>
 </ol>
 <hr>
 <h2>21. Future Roadmap &amp; Scale Horizons</h2>

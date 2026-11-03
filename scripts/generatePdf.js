@@ -163,6 +163,14 @@ const fullHtml = `<!DOCTYPE html>
       font-size: 9pt;
       color: #475569;
     }
+    img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 6px;
+      border: 1px solid #cbd5e1;
+      margin: 10px 0 16px 0;
+      page-break-inside: avoid;
+    }
   </style>
 </head>
 <body>

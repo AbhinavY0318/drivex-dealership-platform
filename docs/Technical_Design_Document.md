@@ -1,6 +1,7 @@
 # Technical Design Document (TDD)
 ## DriveX – Automotive Dealership Commerce & Lead Management Platform
 
+**GitHub Repository:** https://github.com/client-org/drivex *(Local Workspace: `d:\DriveX`, Git Branch: `master`)*  
 **Document Version:** 1.0.0  
 **Target Client:** Authorized Passenger Car Dealership (Lucknow, Uttar Pradesh, India)  
 **Dealership Scale:** 3 Showrooms, 2 Service Workshops, 1 Certified Used-Car Yard, 340 Staff  
@@ -59,6 +60,8 @@ Prior to DriveX, the dealership suffered severe workflow bottlenecks:
 5. **WhatsApp-Driven Used Inventory:** Certified used-car inventory was informally circulated via WhatsApp groups, lacking standardization and violating customer privacy.
 
 DriveX replaces these fragmented processes with a cohesive, end-to-end MERN architecture designed to fulfill strict enterprise automotive standards.
+
+![DriveX Homepage - Luxury Automotive Showroom](./screenshots/homepage.png)
 
 ---
 
@@ -246,6 +249,9 @@ All tax parameters are managed dynamically in database records. Demonstration va
 - **FASTag & Registration Cess:** ₹1,700
 - **Total On-Road Price:** **₹14,23,060**
 
+![DriveX New Vehicle Catalog](./screenshots/new_cars.png)
+![DriveX Vehicle Details & Dynamic On-Road Price Breakup](./screenshots/vehicle_details.png)
+
 > [!IMPORTANT]
 > **Legal Disclaimer & Historical Immutability:**  
 > All on-road calculations explicitly include validity dates (`validUntil`) and standard dealer disclaimers: *"Prices shown are indicative demonstration figures for Uttar Pradesh and subject to government tax revisions at the time of invoicing."*  
@@ -320,6 +326,8 @@ Each certified used vehicle is certified under a standardized 150-point inspecti
 4. **Suspension, Steering & Brakes (25 pts):** Shock absorber damping, tie rod play, disc brake rotor thickness, ABS pump actuation.
 5. **Interior, Exterior & Safety (25 pts):** Paint depth gauge (DFT), tire tread depth (> 4.5mm), seatbelt pretensioners, climate control efficiency.
 
+![DriveX Certified Used Cars Marketplace](./screenshots/used_cars.png)
+
 ---
 
 ## 8. Test-Drive Booking Engine & Concurrency Control
@@ -338,19 +346,26 @@ stateDiagram-v2
     CANCELLED --> [*]
 ```
 
-### B. Atomic Collision Prevention
-Double-booking prevention is enforced at both the database and transaction level:
-1. **Compound Unique Index:**
-   ```javascript
-   testDriveSchema.index(
-     { demoVehicleId: 1, bookingDate: 1, timeSlot: 1, status: 1 },
-     { unique: false }
+### B. Atomic Collision Prevention & Concurrency Handling
+Double-booking prevention is enforced at both the database schema level and the transactional application boundary:
+1. **Compound Partial Unique Index:**
+   ```typescript
+   TestDriveBookingSchema.index(
+     { showroomId: 1, vehicleModelId: 1, bookingDate: 1, timeSlot: 1 },
+     {
+       unique: true,
+       partialFilterExpression: { status: { $in: ['PENDING', 'CONFIRMED'] } },
+     }
    );
    ```
-2. **Atomic Verification Query:**
-   Prior to creating a reservation, the booking service performs an atomic query checking for existing active reservations (`['PENDING', 'CONFIRMED']`) for the identical `demoVehicleId`, `bookingDate`, and `timeSlot`.
+2. **Atomic Collision Handling:**
+   - **Pre-Flight Conflict Inspection:** Prior to saving, the booking service inspects active reservations (`status: { $in: ['PENDING', 'CONFIRMED'] }`) for the target showroom, vehicle model, date, and slot.
+   - **Database-Enforced Race Prevention:** In simultaneous race conditions (e.g. two customers submitting at the exact same millisecond via `Promise.allSettled`), MongoDB's storage engine enforces uniqueness on the partial compound index. Exactly one reservation completes; the colliding document triggers an `E11000` duplicate key exception, which the service catches and translates into a friendly business conflict message (`Selected slot has already been reserved`).
+   - **Slot Release on Cancellation:** Because the index is a partial index filtered on `['PENDING', 'CONFIRMED']`, when a test drive is cancelled (`CANCELLED`), the slot is atomically released and immediately becomes bookable for other customers.
 3. **Past Date Rejection:**
-   Requests for historical dates or elapsed slots on the current date are strictly rejected with HTTP 400.
+   Requests for historical dates or elapsed slots on the current date are strictly rejected with HTTP 400 Bad Request.
+
+![DriveX Test Drive Booking Concierge](./screenshots/test_drive.png)
 
 ---
 
@@ -488,6 +503,8 @@ The Sales Consultant workspace (`/crm`) is an operational hub designed for rapid
    - Interactive AI First-Reply Editor (allows consultants to customize the AI draft before copying to clipboard or sending).
    - Chronological audit activity timeline showing every status change, reassignment, and consultant note.
 5. **Manager Reassignment Modal:** Allows reallocating leads to another available consultant with mandatory reason logging.
+
+![DriveX Sales Consultant CRM & Quick Login Concierge](./screenshots/crm_inbox.png)
 
 ---
 
@@ -694,13 +711,18 @@ The DriveX platform includes an automated testing suite built with Vitest, featu
 
 ---
 
-## 20. Implementation Assumptions & Trade-Offs
+## 20. Implementation Assumptions, Scope Exclusions & Trade-Offs
 
-1. **Tax Rates as Demonstration Values:** State road tax (8%), insurance (3.8%), and dealer accessories are modeled as demonstration values rather than statutory legal advice, with explicit disclaimers in accordance with client instructions.
-2. **Masked Used-Car Registrations:** Public APIs mask registrations to `UP32**1234`. The full registration number is accessible only to authenticated dealership administrators.
-3. **Mock SMS / WhatsApp Notifications:** Acknowledgement messages and SLA alerts are recorded in the dealership notification collection and audit timeline; third-party SMS gateway integration (e.g. Twilio, Gupshup) is stubbed for production staging.
-4. **Mock Payment Gateways:** Test drives and vehicle bookings do not charge upfront booking fees; reservation tokens are generated without third-party payment gateway redirections.
-5. **Admin System Role:** In addition to BUYER and SALES_CONSULTANT, the ADMIN role was implemented to enable catalog governance, pricing slab configuration, and team workload balancing.
+### A. Labeled Engineering Assumptions
+1. **Demonstration Tax & Statutory Levy Slabs:** Statutory levies such as Uttar Pradesh RTO road tax (8.0%), zero-depreciation insurance (3.8%), TCS (1.0% above ₹10 Lakh), and dealer accessories are modeled with demonstration baseline values rather than statutory legal advice, in accordance with the client assessment guidelines. All pricing outputs display explicit validity dates and customer disclaimers.
+2. **Regional City Matrix:** Calculations are seeded for Lucknow (dealership headquarters), Kanpur, Ayodhya, and Varanasi to demonstrate multi-city dynamic road tax and cess variances.
+3. **Data Privacy Masking (DPDP Act 2023):** Used vehicle registration numbers are masked as `UP32**1234` on all public REST API endpoints and web client interfaces, restricting raw registration numbers exclusively to authenticated dealership administrators.
+4. **Zero-Config Developer Experience:** The persistence layer automatically provisions an in-memory `MongoMemoryServer` if `MONGODB_URI` is omitted from the environment, enabling seamless local assessment without requiring an external MongoDB service.
+
+### B. Explicit Scope Exclusions
+1. **Live Payment Gateways & Banking Rails:** Third-party payment gateways (Razorpay, Paytm, UPI) and payment processing are excluded in accordance with the project brief. Test-drive bookings generate secure reservation tokens and confirmations without charging upfront fees.
+2. **Third-Party Telephony & SMS Gateways:** External SMS/WhatsApp gateways (e.g. Twilio, Gupshup) are stubbed with internal notification logs and audit timeline entries rather than incurring external per-message carrier fees.
+3. **Multi-Franchise Commercial Tenancy:** The platform is architected and optimized for this specific authorized dealership enterprise (3 showrooms, 2 workshops, 1 yard) rather than a multi-franchise multi-tenant SaaS.
 
 ---
 
