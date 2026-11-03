@@ -1,7 +1,7 @@
 # Technical Design Document (TDD)
 ## DriveX – Automotive Dealership Commerce & Lead Management Platform
 
-**GitHub Repository:** https://github.com/client-org/drivex *(Local Workspace: `d:\DriveX`, Git Branch: `master`)*  
+**GitHub Repository:** https://github.com/AbhinavY0318/drivex-dealership-platform.git  
 **Document Version:** 1.0.0  
 **Target Client:** Authorized Passenger Car Dealership (Lucknow, Uttar Pradesh, India)  
 **Dealership Scale:** 3 Showrooms, 2 Service Workshops, 1 Certified Used-Car Yard, 340 Staff  
