@@ -68,23 +68,24 @@ export class LeadAssignmentService {
       };
     }
 
-    // Tertiary: If all consultants are marked unavailable, find any consultant or admin
-    const anyConsultant = await User.findOne({
-      role: { $in: ['SALES_CONSULTANT', 'ADMIN'] },
+    // Tertiary: If all showroom consultants are offline, find an available administrative supervisor
+    const availableAdmin = await User.findOne({
+      role: 'ADMIN',
+      isAvailable: true,
     }).sort({ activeLeadCount: 1 });
 
-    if (anyConsultant) {
+    if (availableAdmin) {
       return {
-        consultant: anyConsultant,
+        consultant: availableAdmin,
         strategy: 'EMERGENCY_OVERFLOW_ASSIGNMENT',
-        reason: 'All showroom consultants occupied or offline; routed to emergency overflow pool.',
+        reason: 'All showroom consultants occupied or offline; routed to emergency overflow administrative pool.',
       };
     }
 
     return {
       consultant: null,
       strategy: 'UNASSIGNED_QUEUE',
-      reason: 'No sales consultants or administrators configured in database.',
+      reason: 'No sales consultants or administrators currently available in dealership pool.',
     };
   }
 
@@ -138,6 +139,13 @@ export class LeadAssignmentService {
         action: 'LEAD_ASSIGNED',
         performedByName: 'DriveX Auto-Assignment Engine',
         note: reason,
+        timestamp: now,
+      });
+    } else {
+      activityTimeline.push({
+        action: 'LEAD_UNASSIGNED',
+        performedByName: 'DriveX Auto-Assignment Engine',
+        note: 'No available consultant found at preferred showroom or central pool. Lead placed in unassigned queue for administrative routing.',
         timestamp: now,
       });
     }
@@ -361,5 +369,48 @@ export class LeadAssignmentService {
 
     await lead.save();
     return lead;
+  }
+
+  /**
+   * Rebalances active uncontacted leads when a consultant goes offline or unavailable.
+   */
+  public static async handleConsultantUnavailable(
+    consultantId: string,
+    performedByUserId?: string,
+    performedByName: string = 'Dealership Administrator'
+  ): Promise<{ reallocatedCount: number; reallocatedLeadIds: string[] }> {
+    const consultant = await User.findById(consultantId);
+    if (!consultant) throw new Error(`Consultant ${consultantId} not found`);
+
+    // Find all active uncontacted leads assigned to this consultant
+    const activeLeads = await Lead.find({
+      assignedConsultantId: consultant._id,
+      status: { $in: ['NEW', 'ASSIGNED'] },
+    });
+
+    const reallocatedLeadIds: string[] = [];
+
+    for (const lead of activeLeads) {
+      // Find new eligible consultant
+      const { consultant: nextConsultant } = await this.selectEligibleConsultant(
+        lead.preferredShowroomId.toString()
+      );
+
+      if (nextConsultant && nextConsultant._id.toString() !== consultant._id.toString()) {
+        await this.reassignLead(
+          lead._id.toString(),
+          nextConsultant._id.toString(),
+          `Automated rebalance: original consultant ${consultant.name} went offline.`,
+          performedByUserId,
+          performedByName
+        );
+        reallocatedLeadIds.push(lead._id.toString());
+      }
+    }
+
+    return {
+      reallocatedCount: reallocatedLeadIds.length,
+      reallocatedLeadIds,
+    };
   }
 }

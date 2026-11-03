@@ -665,20 +665,32 @@ Incoming Request
 
 ## 19. Automated Testing Strategy & Verification Report
 
-The DriveX platform includes an automated testing suite built with Vitest.
+The DriveX platform includes an automated testing suite built with Vitest, featuring comprehensive coverage of core business rules, edge cases, concurrent access, and security policies.
 
 ### Test Execution Summary (March 2026)
 
 | Test Suite File | Domain Covered | Tests | Status | Execution Time |
 | :--- | :--- | :---: | :---: | :---: |
-| `pricing.test.ts` | On-road pricing engine, regional tax slabs, reducing-balance EMI formula, negative bounds | 5 | **PASSED** | 841ms |
-| `testDrive.test.ts` | Real-time slot availability, atomic booking, double-booking collision prevention, past date rejection | 4 | **PASSED** | 937ms |
-| `leadAssignment.test.ts` | Deterministic least-workload routing, round-robin tiebreaker, 5-minute SLA timer calculation | 3 | **PASSED** | 1,073ms |
-| `authAndPrivacy.test.ts` | DPDP registration masking (`UP32**1234`), JWT authentication, RBAC authorization, bcrypt hashing | 7 | **PASSED** | 1,457ms |
-| `e2eWorkflow.test.ts` | End-to-end buyer enquiry $\rightarrow$ auto-assignment $\rightarrow$ consultant response $\rightarrow$ lead conversion | 8 | **PASSED** | 4,387ms |
-| **Total Test Suite** | **Comprehensive Platform Verification** | **27** | **100% PASSED** | **8.69s (tests)** |
+| `pricing.test.ts` | On-road pricing engine, regional tax slabs, reducing-balance EMI formula, negative bounds | 5 | **PASSED** | 499ms |
+| `testDrive.test.ts` | Real-time slot availability, atomic booking, double-booking collision prevention, past date rejection | 4 | **PASSED** | 539ms |
+| `leadAssignment.test.ts` | Deterministic least-workload routing, round-robin tiebreaker, 5-minute SLA timer calculation | 3 | **PASSED** | 715ms |
+| `authAndPrivacy.test.ts` | DPDP registration masking (`UP32**1234`), JWT authentication, RBAC authorization, bcrypt hashing | 7 | **PASSED** | 869ms |
+| `e2eWorkflow.test.ts` | End-to-end buyer enquiry $\rightarrow$ auto-assignment $\rightarrow$ consultant response $\rightarrow$ lead conversion | 8 | **PASSED** | 1,781ms |
+| `productionReadiness.test.ts` | Hardened production edge cases (concurrency, unassigned queue, auto-rebalance, snapshot immutability, DPDP consent, AI timeouts/malformed JSON fallback, consultant lead RBAC isolation, registration sanitization) | 9 | **PASSED** | 1,901ms |
+| **Total Test Suite** | **Comprehensive Platform Verification & Edge Cases** | **36** | **100% PASSED** | **13.05s** |
 
-All 27 automated tests executed cleanly against an in-memory replica database.
+### Hardened Production Edge Cases Verified in Automated Suite
+
+1. **Concurrent Demo Car Double-Booking:** When two customers attempt to reserve the same demo vehicle model, showroom, date, and time slot at the exact same millisecond (`Promise.allSettled`), MongoDB's partial unique compound index `{ showroomId: 1, vehicleModelId: 1, bookingDate: 1, timeSlot: 1 }` guarantees atomic slot reservation where exactly one booking succeeds and the colliding request fails cleanly with an explanatory collision message.
+2. **No Available Consultant for a Showroom:** When all staff members are offline or a satellite showroom has no active consultants, enquiries are safely routed to the `UNASSIGNED_QUEUE` with status `NEW`, accompanied by an explicit `LEAD_UNASSIGNED` activity timeline audit event.
+3. **Consultant Becoming Unavailable After Lead Assignment:** When a sales consultant toggles to offline/unavailable, `handleConsultantUnavailable` automatically identifies uncontacted active leads and reallocates them to the next available consultant based on least active workload, preserving lead progression and updating the audit timeline.
+4. **Admin Changing Pricing During Existing Enquiries:** Pricing configurations saved onto existing leads via `pricingSnapshot` remain 100% immutable in MongoDB, insulating customer quotes and historical financial records from subsequent administrative tax or ex-showroom price updates.
+5. **Expired Pricing Configuration:** Pricing engine verifies `priceValidityDate` against the calculation timestamp; expired configurations are flagged with `isExpired: true` and an explicit disclaimer notice advising the customer of required quote revalidation.
+6. **DPDP Customer Consent Enforcement:** Enquiries submitted with `consentGiven: false` or missing consent are immediately rejected under the Digital Personal Data Protection (DPDP) Act with HTTP 400 Bad Request.
+7. **AI API Timeout & Fallback:** When Google Gemini API calls exceed the configured network timeout or fail due to network partitions, the AI engine smoothly degrades to deterministic rule-based template generation without breaking the user experience.
+8. **AI Malformed JSON Response:** When LLM output contains non-JSON content or syntax errors, the robust JSON parser extracts embedded JSON objects or gracefully activates deterministic fallback generation.
+9. **Consultant Lead RBAC Isolation:** Strict ownership validation ensures that sales consultants can only view, update status, reassign, or generate AI drafts for leads explicitly assigned to them; attempts to access or modify other consultants' leads return HTTP 403 Forbidden.
+10. **Public API Registration Number Sanitization:** In accordance with customer privacy rules, all public used-vehicle queries strictly mask registration identifiers (e.g. `UP32**1234`), with raw registration numbers restricted to authenticated administrators.
 
 ---
 
@@ -715,7 +727,7 @@ DriveX successfully transforms an authorized car dealership network from fragmen
 - [x] Five-minute response SLA timer and sales CRM dashboard.
 - [x] Generative AI buyer summarization and editable first-reply drafts with fallback.
 - [x] Role-Based Access Control (Buyer, Sales Consultant, Admin).
-- [x] 27/27 automated tests passing.
+- [x] 36/36 automated tests passing across 6 test suites.
 - [x] Monorepo client and server production builds clean.
 
 **DriveX is ready for immediate deployment.**

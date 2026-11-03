@@ -57,7 +57,13 @@ const TestDriveBookingSchema = new Schema<ITestDriveBooking>(
   { timestamps: true }
 );
 
-// Compound index for slot checking
-TestDriveBookingSchema.index({ showroomId: 1, vehicleModelId: 1, bookingDate: 1, timeSlot: 1, status: 1 });
+// Compound unique index enforcing atomic double-booking prevention on active slots
+TestDriveBookingSchema.index(
+  { showroomId: 1, vehicleModelId: 1, bookingDate: 1, timeSlot: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { status: { $in: ['PENDING', 'CONFIRMED'] } },
+  }
+);
 
 export const TestDriveBooking = mongoose.model<ITestDriveBooking>('TestDriveBooking', TestDriveBookingSchema);

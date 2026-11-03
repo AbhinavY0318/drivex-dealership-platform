@@ -10,6 +10,7 @@ import { Lead } from '../models/Lead.js';
 import { TestDriveBooking } from '../models/TestDriveBooking.js';
 import { sendSuccess, sendError } from '../utils/response.js';
 import { AuthRequest } from '../middleware/authMiddleware.js';
+import { LeadAssignmentService } from '../services/leadAssignmentService.js';
 
 export class AdminController {
   // --- VEHICLE MODELS ---
@@ -205,10 +206,24 @@ export class AdminController {
       user.isAvailable = !user.isAvailable;
       await user.save();
 
+      let reallocated = { reallocatedCount: 0, reallocatedLeadIds: [] as string[] };
+      // If consultant became offline and autoReassign is requested (or by default)
+      if (!user.isAvailable && req.query.autoReassign === 'true') {
+        reallocated = await LeadAssignmentService.handleConsultantUnavailable(
+          user._id.toString(),
+          req.user?.userId,
+          req.user?.name || 'Administrator'
+        );
+      }
+
       return sendSuccess(
         res,
-        `Consultant status changed to ${user.isAvailable ? 'AVAILABLE' : 'OFFLINE'}`,
-        { id: user._id, isAvailable: user.isAvailable }
+        `Consultant status changed to ${user.isAvailable ? 'AVAILABLE' : 'OFFLINE'}${
+          reallocated.reallocatedCount > 0
+            ? `. ${reallocated.reallocatedCount} active leads auto-reassigned.`
+            : ''
+        }`,
+        { id: user._id, isAvailable: user.isAvailable, reallocated }
       );
     } catch (err: any) {
       return sendError(res, 'Failed to toggle availability', 500, err);

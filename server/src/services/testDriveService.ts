@@ -138,8 +138,17 @@ export class TestDriveService {
       confirmedAt: new Date(),
     });
 
-    await booking.save();
-    return booking;
+    try {
+      await booking.save();
+      return booking;
+    } catch (err: any) {
+      if (err.code === 11000 || err.name === 'MongoServerError') {
+        throw new Error(
+          `Selected slot "${timeSlot}" on ${bookingDate} has already been reserved at ${showroom.name}. Please select another time slot.`
+        );
+      }
+      throw err;
+    }
   }
 
   /**

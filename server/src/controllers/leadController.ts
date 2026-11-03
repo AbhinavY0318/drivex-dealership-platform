@@ -127,6 +127,19 @@ export class LeadController {
         return sendError(res, parsed.error.errors[0].message, 400);
       }
 
+      const existingLead = await Lead.findById(id);
+      if (!existingLead) {
+        return sendError(res, `Lead with ID ${id} not found`, 404);
+      }
+
+      if (
+        req.user?.role === 'SALES_CONSULTANT' &&
+        existingLead.assignedConsultantId &&
+        existingLead.assignedConsultantId.toString() !== req.user.userId
+      ) {
+        return sendError(res, 'Unauthorized: You can only update leads assigned to your queue', 403);
+      }
+
       const updated = await LeadAssignmentService.updateStatus(
         id,
         parsed.data.status,
@@ -147,6 +160,19 @@ export class LeadController {
       const parsed = reassignLeadSchema.safeParse(req.body);
       if (!parsed.success) {
         return sendError(res, parsed.error.errors[0].message, 400);
+      }
+
+      const existingLead = await Lead.findById(id);
+      if (!existingLead) {
+        return sendError(res, 'Lead not found', 404);
+      }
+
+      if (
+        req.user?.role === 'SALES_CONSULTANT' &&
+        existingLead.assignedConsultantId &&
+        existingLead.assignedConsultantId.toString() !== req.user.userId
+      ) {
+        return sendError(res, 'Unauthorized: You can only reassign leads assigned to your queue', 403);
       }
 
       const updated = await LeadAssignmentService.reassignLead(
@@ -176,6 +202,14 @@ export class LeadController {
         return sendError(res, 'Lead not found', 404);
       }
 
+      if (
+        req.user?.role === 'SALES_CONSULTANT' &&
+        lead.assignedConsultantId &&
+        lead.assignedConsultantId.toString() !== req.user.userId
+      ) {
+        return sendError(res, 'Unauthorized: You can only edit reply drafts for your assigned leads', 403);
+      }
+
       lead.aiFirstReplyDraft.lastEditedContent = parsed.data.editedContent;
       lead.aiFirstReplyDraft.isCustomized = true;
       await lead.save();
@@ -197,6 +231,15 @@ export class LeadController {
 
       if (!lead) {
         return sendError(res, 'Lead not found', 404);
+      }
+
+      const assignedId = (lead.assignedConsultantId as any)?._id?.toString() || lead.assignedConsultantId?.toString();
+      if (
+        req.user?.role === 'SALES_CONSULTANT' &&
+        assignedId &&
+        assignedId !== req.user.userId
+      ) {
+        return sendError(res, 'Unauthorized: You can only regenerate drafts for your assigned leads', 403);
       }
 
       const context = {

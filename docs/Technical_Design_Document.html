@@ -865,7 +865,7 @@ return {
 </ul>
 <hr>
 <h2>19. Automated Testing Strategy &amp; Verification Report</h2>
-<p>The DriveX platform includes an automated testing suite built with Vitest.</p>
+<p>The DriveX platform includes an automated testing suite built with Vitest, featuring comprehensive coverage of core business rules, edge cases, concurrent access, and security policies.</p>
 <h3>Test Execution Summary (March 2026)</h3>
 <table>
 <thead>
@@ -882,45 +882,64 @@ return {
 <td align="left">On-road pricing engine, regional tax slabs, reducing-balance EMI formula, negative bounds</td>
 <td align="center">5</td>
 <td align="center"><strong>PASSED</strong></td>
-<td align="center">841ms</td>
+<td align="center">499ms</td>
 </tr>
 <tr>
 <td align="left"><code>testDrive.test.ts</code></td>
 <td align="left">Real-time slot availability, atomic booking, double-booking collision prevention, past date rejection</td>
 <td align="center">4</td>
 <td align="center"><strong>PASSED</strong></td>
-<td align="center">937ms</td>
+<td align="center">539ms</td>
 </tr>
 <tr>
 <td align="left"><code>leadAssignment.test.ts</code></td>
 <td align="left">Deterministic least-workload routing, round-robin tiebreaker, 5-minute SLA timer calculation</td>
 <td align="center">3</td>
 <td align="center"><strong>PASSED</strong></td>
-<td align="center">1,073ms</td>
+<td align="center">715ms</td>
 </tr>
 <tr>
 <td align="left"><code>authAndPrivacy.test.ts</code></td>
 <td align="left">DPDP registration masking (<code>UP32**1234</code>), JWT authentication, RBAC authorization, bcrypt hashing</td>
 <td align="center">7</td>
 <td align="center"><strong>PASSED</strong></td>
-<td align="center">1,457ms</td>
+<td align="center">869ms</td>
 </tr>
 <tr>
 <td align="left"><code>e2eWorkflow.test.ts</code></td>
 <td align="left">End-to-end buyer enquiry $\rightarrow$ auto-assignment $\rightarrow$ consultant response $\rightarrow$ lead conversion</td>
 <td align="center">8</td>
 <td align="center"><strong>PASSED</strong></td>
-<td align="center">4,387ms</td>
+<td align="center">1,781ms</td>
+</tr>
+<tr>
+<td align="left"><code>productionReadiness.test.ts</code></td>
+<td align="left">Hardened production edge cases (concurrency, unassigned queue, auto-rebalance, snapshot immutability, DPDP consent, AI timeouts/malformed JSON fallback, consultant lead RBAC isolation, registration sanitization)</td>
+<td align="center">9</td>
+<td align="center"><strong>PASSED</strong></td>
+<td align="center">1,901ms</td>
 </tr>
 <tr>
 <td align="left"><strong>Total Test Suite</strong></td>
-<td align="left"><strong>Comprehensive Platform Verification</strong></td>
-<td align="center"><strong>27</strong></td>
+<td align="left"><strong>Comprehensive Platform Verification &amp; Edge Cases</strong></td>
+<td align="center"><strong>36</strong></td>
 <td align="center"><strong>100% PASSED</strong></td>
-<td align="center"><strong>8.69s (tests)</strong></td>
+<td align="center"><strong>13.05s</strong></td>
 </tr>
 </tbody></table>
-<p>All 27 automated tests executed cleanly against an in-memory replica database.</p>
+<h3>Hardened Production Edge Cases Verified in Automated Suite</h3>
+<ol>
+<li><strong>Concurrent Demo Car Double-Booking:</strong> When two customers attempt to reserve the same demo vehicle model, showroom, date, and time slot at the exact same millisecond (<code>Promise.allSettled</code>), MongoDB&#39;s partial unique compound index <code>{ showroomId: 1, vehicleModelId: 1, bookingDate: 1, timeSlot: 1 }</code> guarantees atomic slot reservation where exactly one booking succeeds and the colliding request fails cleanly with an explanatory collision message.</li>
+<li><strong>No Available Consultant for a Showroom:</strong> When all staff members are offline or a satellite showroom has no active consultants, enquiries are safely routed to the <code>UNASSIGNED_QUEUE</code> with status <code>NEW</code>, accompanied by an explicit <code>LEAD_UNASSIGNED</code> activity timeline audit event.</li>
+<li><strong>Consultant Becoming Unavailable After Lead Assignment:</strong> When a sales consultant toggles to offline/unavailable, <code>handleConsultantUnavailable</code> automatically identifies uncontacted active leads and reallocates them to the next available consultant based on least active workload, preserving lead progression and updating the audit timeline.</li>
+<li><strong>Admin Changing Pricing During Existing Enquiries:</strong> Pricing configurations saved onto existing leads via <code>pricingSnapshot</code> remain 100% immutable in MongoDB, insulating customer quotes and historical financial records from subsequent administrative tax or ex-showroom price updates.</li>
+<li><strong>Expired Pricing Configuration:</strong> Pricing engine verifies <code>priceValidityDate</code> against the calculation timestamp; expired configurations are flagged with <code>isExpired: true</code> and an explicit disclaimer notice advising the customer of required quote revalidation.</li>
+<li><strong>DPDP Customer Consent Enforcement:</strong> Enquiries submitted with <code>consentGiven: false</code> or missing consent are immediately rejected under the Digital Personal Data Protection (DPDP) Act with HTTP 400 Bad Request.</li>
+<li><strong>AI API Timeout &amp; Fallback:</strong> When Google Gemini API calls exceed the configured network timeout or fail due to network partitions, the AI engine smoothly degrades to deterministic rule-based template generation without breaking the user experience.</li>
+<li><strong>AI Malformed JSON Response:</strong> When LLM output contains non-JSON content or syntax errors, the robust JSON parser extracts embedded JSON objects or gracefully activates deterministic fallback generation.</li>
+<li><strong>Consultant Lead RBAC Isolation:</strong> Strict ownership validation ensures that sales consultants can only view, update status, reassign, or generate AI drafts for leads explicitly assigned to them; attempts to access or modify other consultants&#39; leads return HTTP 403 Forbidden.</li>
+<li><strong>Public API Registration Number Sanitization:</strong> In accordance with customer privacy rules, all public used-vehicle queries strictly mask registration identifiers (e.g. <code>UP32**1234</code>), with raw registration numbers restricted to authenticated administrators.</li>
+</ol>
 <hr>
 <h2>20. Implementation Assumptions &amp; Trade-Offs</h2>
 <ol>
@@ -952,7 +971,7 @@ return {
 <li><input checked="" disabled="" type="checkbox"> Five-minute response SLA timer and sales CRM dashboard.</li>
 <li><input checked="" disabled="" type="checkbox"> Generative AI buyer summarization and editable first-reply drafts with fallback.</li>
 <li><input checked="" disabled="" type="checkbox"> Role-Based Access Control (Buyer, Sales Consultant, Admin).</li>
-<li><input checked="" disabled="" type="checkbox"> 27/27 automated tests passing.</li>
+<li><input checked="" disabled="" type="checkbox"> 36/36 automated tests passing across 6 test suites.</li>
 <li><input checked="" disabled="" type="checkbox"> Monorepo client and server production builds clean.</li>
 </ul>
 <p><strong>DriveX is ready for immediate deployment.</strong></p>

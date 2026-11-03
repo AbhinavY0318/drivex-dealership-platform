@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema } from 'mongoose';
+import { maskRegistrationNumber } from '../utils/masking.js';
 
 export interface IUsedVehicleInspection {
   rating: number;
@@ -99,5 +100,15 @@ const UsedVehicleSchema = new Schema<IUsedVehicle>(
 
 // Compound indexes for faceted used car search
 UsedVehicleSchema.index({ askingPrice: 1, year: 1, kilometres: 1, fuelType: 1 });
+
+// Privacy-first serialization: automatically masks registration number unless explicitly requested
+UsedVehicleSchema.set('toJSON', {
+  transform: (doc, ret, options: any) => {
+    if (!options?.showFullRegistration && ret.registrationNumber) {
+      ret.registrationNumber = maskRegistrationNumber(ret.registrationNumber);
+    }
+    return ret;
+  },
+});
 
 export const UsedVehicle = mongoose.model<IUsedVehicle>('UsedVehicle', UsedVehicleSchema);

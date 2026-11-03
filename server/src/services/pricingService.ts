@@ -20,6 +20,7 @@ export interface PriceBreakupResult {
   priceValidityDate: string;
   disclaimer: string;
   isDemonstrationPrice: boolean;
+  isExpired: boolean;
 }
 
 export interface EMICalculationInput {
@@ -105,6 +106,7 @@ export class PricingService {
         disclaimer:
           'Demonstration on-road estimate for simulation purposes only. Final road tax, insurance, and statutory charges are determined by Lucknow RTO and insurer at the time of final invoicing.',
         isDemonstrationPrice: true,
+        isExpired: false,
       };
     }
 
@@ -129,6 +131,9 @@ export class PricingService {
       registrationAndFastag -
       offersDiscount;
 
+    const now = new Date();
+    const isExpired = pricingRecord.priceValidityDate ? new Date(pricingRecord.priceValidityDate) < now : false;
+
     return {
       city: pricingRecord.city,
       state: pricingRecord.state,
@@ -146,8 +151,11 @@ export class PricingService {
       },
       totalOnRoadPrice: total,
       priceValidityDate: new Date(priceValidityDate).toISOString().split('T')[0],
-      disclaimer,
+      disclaimer: isExpired
+        ? `${disclaimer} [Notice: This regional pricing configuration expired on ${new Date(priceValidityDate).toISOString().split('T')[0]}.]`
+        : disclaimer,
       isDemonstrationPrice: true,
+      isExpired,
     };
   }
 
