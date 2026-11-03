@@ -106,7 +106,7 @@ export class TestDriveController {
 
   public static async updateStatus(req: AuthRequest, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const { status, cancellationReason } = req.body;
 
       if (!['PENDING', 'CONFIRMED', 'COMPLETED', 'CANCELLED'].includes(status)) {

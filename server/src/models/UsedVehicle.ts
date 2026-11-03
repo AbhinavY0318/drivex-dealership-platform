@@ -12,7 +12,7 @@ export interface IUsedVehicleInspection {
   inspectionDate: Date;
 }
 
-export interface IUsedVehicle extends Document {
+export interface IUsedVehicle {
   stockId: string;
   model: string;
   variant: string;

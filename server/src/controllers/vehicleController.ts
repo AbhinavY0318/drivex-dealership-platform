@@ -66,7 +66,7 @@ export class VehicleController {
 
   public static async getModelBySlug(req: Request, res: Response) {
     try {
-      const { slug } = req.params;
+      const slug = req.params.slug as string;
       const model = await VehicleModel.findOne({ slug: slug.toLowerCase(), isActive: true });
 
       if (!model) {
@@ -88,7 +88,7 @@ export class VehicleController {
 
   public static async getVariantPricing(req: Request, res: Response) {
     try {
-      const { variantId } = req.params;
+      const variantId = req.params.variantId as string;
       const city = (req.query.city as string) || 'Lucknow';
 
       const pricing = await PricingService.getOnRoadPrice(variantId, city);

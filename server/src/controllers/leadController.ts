@@ -121,7 +121,7 @@ export class LeadController {
 
   public static async updateStatus(req: AuthRequest, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const parsed = updateLeadStatusSchema.safeParse(req.body);
       if (!parsed.success) {
         return sendError(res, parsed.error.errors[0].message, 400);
@@ -143,7 +143,7 @@ export class LeadController {
 
   public static async reassignLead(req: AuthRequest, res: Response) {
     try {
-      const { id } = req.params;
+      const id = req.params.id as string;
       const parsed = reassignLeadSchema.safeParse(req.body);
       if (!parsed.success) {
         return sendError(res, parsed.error.errors[0].message, 400);

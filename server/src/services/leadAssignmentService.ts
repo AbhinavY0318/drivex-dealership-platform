@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { User, IUser } from '../models/User.js';
-import { Lead, ILead, LeadStatus } from '../models/Lead.js';
+import { Lead, ILead, LeadStatus, ILeadActivity } from '../models/Lead.js';
 import { LeadAssignmentHistory } from '../models/LeadAssignmentHistory.js';
 import { Notification } from '../models/Notification.js';
 import { Showroom } from '../models/Showroom.js';
@@ -125,7 +125,7 @@ export class LeadAssignmentService {
     const responseDueAt = new Date(now.getTime() + config.slaResponseTimeMinutes * 60 * 1000);
 
     // Initial timeline
-    const activityTimeline = [
+    const activityTimeline: ILeadActivity[] = [
       {
         action: 'LEAD_CREATED',
         note: `Customer submitted enquiry via ${input.source || 'WEBSITE'}.`,
@@ -297,7 +297,7 @@ export class LeadAssignmentService {
       previousConsultantId,
       newConsultantId: newConsultant._id,
       assignedBy: performedByUserId ? new mongoose.Types.ObjectId(performedByUserId) : undefined,
-      assignedByName,
+      assignedByName: performedByName,
       assignmentStrategy: 'MANUAL_REASSIGNMENT',
       reason,
       consultantWorkloadAtAssignment: newConsultant.activeLeadCount - 1,
