@@ -1,8 +1,7 @@
 import mongoose from 'mongoose';
-import { MongoMemoryServer } from 'mongodb-memory-server';
 import { config } from './environment.js';
 
-let mongodInstance: MongoMemoryServer | null = null;
+let mongodInstance: any = null;
 
 export const connectDB = async (): Promise<string> => {
   if (mongoose.connection.readyState === 1) {
@@ -12,9 +11,17 @@ export const connectDB = async (): Promise<string> => {
   let uri = config.mongodbUri;
 
   if (!uri) {
+    if (config.nodeEnv === 'production') {
+      throw new Error('[Database] MONGODB_URI is mandatory in production environment.');
+    }
     console.log('[Database] No MONGODB_URI provided. Starting in-memory MongoMemoryServer...');
-    mongodInstance = await MongoMemoryServer.create();
-    uri = mongodInstance.getUri();
+    try {
+      const { MongoMemoryServer } = await (Function('return import("mongodb-memory-server")')());
+      mongodInstance = await MongoMemoryServer.create();
+      uri = mongodInstance.getUri();
+    } catch {
+      throw new Error('[Database] No MONGODB_URI provided and in-memory server is unavailable.');
+    }
   }
 
   try {
