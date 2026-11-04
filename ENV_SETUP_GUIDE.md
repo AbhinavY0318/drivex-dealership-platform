@@ -28,9 +28,9 @@ The table below catalogs every environment variable referenced in the DriveX cod
 | **`PORT`** | Optional | Dev / Prod | Backend (`server`) | Port number on which Express HTTP server listens. Defaults to `5000` if unset. | `5000` |
 | **`NODE_ENV`** | Optional | Dev / Prod | Backend (`server`) | Runtime environment flag (`development`, `production`, `test`). Controls logging and strict production startup validation. | `development` or `production` |
 | **`CLIENT_ORIGIN`** *(or `CLIENT_URL`)* | Mandatory in Prod | Dev / Prod | Backend (`server`) | Whitelisted frontend origin for Cross-Origin Resource Sharing (CORS). Supports both variable names synonymously. | `http://localhost:5173` (Dev) / `https://drivex.vercel.app` (Prod) |
-| **`MONGODB_URI`** | Mandatory in Prod | Dev / Prod | Backend (`server`) | MongoDB connection string. In development, if omitted, DriveX automatically spins up an in-memory `MongoMemoryServer`. In production, must be an external cluster. | `mongodb+srv://user:pass@cluster0.mongodb.net/drivex?retryWrites=true&w=majority` |
-| **`JWT_SECRET`** | Mandatory in Prod | Dev / Prod | Backend (`server`) | Cryptographic secret key used to sign HMAC SHA-256 access tokens (`1h` lifespan). In production, placeholder strings trigger startup failure. | 64-char hex string (e.g., `4a8f9c...`) |
-| **`JWT_REFRESH_SECRET`** | Mandatory in Prod | Dev / Prod | Backend (`server`) | Cryptographic secret key used to sign long-lived refresh tokens (`7d` lifespan). Must be distinct from `JWT_SECRET`. | 64-char hex string (e.g., `8e2b1d...`) |
+| **`MONGODB_URI`** | Mandatory in Prod | Dev / Prod | Backend (`server`) | MongoDB connection string. In development, if omitted, DriveX automatically spins up an in-memory `MongoMemoryServer`. In production, must be an external cluster. | `mongodb+srv://<db_user>:<db_password>@cluster0.xxxxx.mongodb.net/drivex?retryWrites=true&w=majority` |
+| **`JWT_SECRET`** | Mandatory in Prod | Dev / Prod | Backend (`server`) | Cryptographic secret key used to sign HMAC SHA-256 access tokens (`1h` lifespan). In production, placeholder strings trigger startup failure. | 64-char hex string (e.g., `<your_random_64_char_hex_string>`) |
+| **`JWT_REFRESH_SECRET`** | Mandatory in Prod | Dev / Prod | Backend (`server`) | Cryptographic secret key used to sign long-lived refresh tokens (`7d` lifespan). Must be distinct from `JWT_SECRET`. | 64-char hex string (e.g., `<your_second_random_64_char_hex_string>`) |
 | **`JWT_EXPIRES_IN`** | Optional | Dev / Prod | Backend (`server`) | Lifespan of JWT access tokens. Defaults to `1h` if omitted. | `15m`, `1h`, `24h` |
 | **`JWT_REFRESH_EXPIRES_IN`** | Optional | Dev / Prod | Backend (`server`) | Lifespan of JWT refresh tokens. Defaults to `7d` if omitted. | `7d`, `30d` |
 | **`GEMINI_API_KEY`** | Optional | Dev / Prod | Backend (`server`) | Google Gemini Generative AI API key for buyer summarization and first-reply drafting. If omitted, built-in deterministic fallback activates. | `AIzaSy...` |
@@ -76,11 +76,11 @@ In accordance with the client project brief and architecture:
    - Select **Drivers** (Node.js).
    - Copy the connection string format:
      ```text
-     mongodb+srv://drivex_admin:<password>@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
+     mongodb+srv://<db_username>:<db_password>@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority
      ```
-   - Replace `<password>` with your database user password and append `/drivex` before the `?` query string:
+   - Replace `<db_password>` with your database user password and append `/drivex` before the `?` query string:
      ```text
-     mongodb+srv://drivex_admin:MySecurePass123@cluster0.xxxxx.mongodb.net/drivex?retryWrites=true&w=majority
+     mongodb+srv://<db_username>:<db_password>@cluster0.xxxxx.mongodb.net/drivex?retryWrites=true&w=majority
      ```
    - **Target Variable:** `MONGODB_URI`
 
@@ -98,10 +98,10 @@ Do not use simple strings like `secret123`. Generate cryptographically random 25
 2. Run the command **twice** to produce two unique strings:
    - First output string $\rightarrow$ assign to **`JWT_SECRET`**
    - Second output string $\rightarrow$ assign to **`JWT_REFRESH_SECRET`**
-3. Example values:
+3. Example format:
    ```text
-   JWT_SECRET=4a8f9c1b3d5e7f2a0c6b8d4e1f3a5c7b9e0d2f4a6c8e1b3d5f7a9c0e2b4d6f8a
-   JWT_REFRESH_SECRET=8e2b1d4f6a0c3e5b7d9f1a2c4e6b8d0f2a4c6e8b0d2f4a6c8e1b3d5f7a9c0e2b
+   JWT_SECRET=<your_generated_random_64_character_hex_string>
+   JWT_REFRESH_SECRET=<your_second_generated_random_64_character_hex_string>
    ```
 
 ---
