@@ -67,18 +67,23 @@ Visit **`http://localhost:5173`** in your browser.
 
 ## 3. Environment Variables Reference
 
+> For comprehensive credential acquisition instructions (MongoDB Atlas, Gemini API, JWT generation) and exact file placement rules, refer to **[ENV_SETUP_GUIDE.md](./ENV_SETUP_GUIDE.md)**.
+
 | Variable Name | Default Value | Description |
 | :--- | :--- | :--- |
 | `NODE_ENV` | `development` | Environment mode (`development`, `production`, `test`) |
 | `PORT` | `5000` | Port for the Express backend REST API |
-| `MONGODB_URI` | *(empty string)* | MongoDB connection string. If unset, automatically spins up `MongoMemoryServer` |
-| `JWT_SECRET` | `drivex_super_secret_jwt_key_2026` | Secret key used to sign access tokens |
-| `JWT_EXPIRES_IN` | `1d` | Access token lifespan (e.g. `15m`, `1d`, `7d`) |
-| `JWT_REFRESH_SECRET` | `drivex_refresh_token_secret_key_2026` | Secret key for refresh tokens |
+| `MONGODB_URI` | *(empty string)* | MongoDB connection string. If unset in dev, automatically spins up `MongoMemoryServer` |
+| `CLIENT_ORIGIN` *(or `CLIENT_URL`)* | `http://localhost:5173` | Allowed CORS origin for frontend |
+| `JWT_SECRET` | `drivex_super_secret_jwt_access_key_replace_in_production_2026` | Secret key used to sign access tokens |
+| `JWT_REFRESH_SECRET` | `drivex_super_secret_jwt_refresh_key_replace_in_production_2026` | Secret key for refresh tokens |
+| `JWT_EXPIRES_IN` | `1h` | Access token lifespan (e.g. `15m`, `1h`, `24h`) |
 | `JWT_REFRESH_EXPIRES_IN` | `7d` | Refresh token lifespan |
-| `CLIENT_ORIGIN` | `http://localhost:5173` | Allowed CORS origin for frontend |
 | `GEMINI_API_KEY` | *(optional)* | Google Gemini API key for AI buyer summary and consultant first-reply drafts. If omitted, structured deterministic fallback kicks in with `status: 'FALLBACK'`. |
-| `VITE_API_URL` | `/api` | Base path for frontend API proxy (or `http://localhost:5000/api`) |
+| `DEALERSHIP_CITY` | `Lucknow` | Dealership city context |
+| `DEALERSHIP_STATE` | `Uttar Pradesh` | Dealership state context |
+| `SLA_RESPONSE_TIME_MINUTES` | `5` | Five-minute response SLA window for leads |
+| `VITE_API_URL` | `/api` | Base path for frontend API proxy (or `https://your-api.onrender.com/api` in production) |
 
 ---
 

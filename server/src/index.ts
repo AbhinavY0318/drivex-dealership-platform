@@ -1,10 +1,11 @@
 import { createApp } from './app.js';
 import { connectDB } from './config/db.js';
-import { config } from './config/environment.js';
+import { config, validateEnvironment } from './config/environment.js';
 import { seedDatabase } from './scripts/seed.js';
 
 const startServer = async () => {
   try {
+    validateEnvironment();
     console.log('[Server] Connecting to MongoDB...');
     await connectDB();
 

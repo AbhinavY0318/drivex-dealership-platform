@@ -89,6 +89,8 @@ cp .env.example .env
 
 The default configuration connects to an automatic **in-memory MongoDB instance** if `MONGODB_URI` is left blank, enabling instantaneous out-of-the-box operation with zero external database setup required.
 
+> For complete step-by-step credential acquisition, MongoDB Atlas setup, JWT generation, and production deployment, see the **[Complete Environment Setup Guide (`ENV_SETUP_GUIDE.md`)](./ENV_SETUP_GUIDE.md)**.
+
 ### 3. Database Seeding
 Seed Lucknow showrooms, vehicle models, variants, city pricing rules, certified used cars, and staff accounts:
 ```bash
@@ -146,7 +148,8 @@ npm run build
 
 ## 📚 Detailed Documentation
 
-- **[Deployment & Operations Guide (`deployment.md`)](./deployment.md):** Complete guide for environment variables, database configuration, local installation, and production deployment on Render/Vercel/Docker.
+- **[Environment Configuration & Setup Guide (`ENV_SETUP_GUIDE.md`)](./ENV_SETUP_GUIDE.md):** Comprehensive beginner-friendly guide covering variable audits, credential acquisition steps (Atlas, Gemini, JWT), file placement, and production deployment.
+- **[Deployment & Operations Guide (`deployment.md`)](./deployment.md):** Technical deployment runbook for environment variables, database configuration, local installation, and production deployment on Render/Vercel/Docker.
 - **[Technical Design Document (PDF)](./Technical_Design_Document.pdf):** Full 22-chapter architecture document with diagrams, formulas, embedded UI screenshots, and testing reports.
 - **[Technical Design Document (Markdown)](./docs/Technical_Design_Document.md):** Source markdown document.
 
