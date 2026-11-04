@@ -34,7 +34,7 @@ export interface UsedCarPriceEstimate {
 
 export class AIService {
   private static geminiEndpoint =
-    'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
+    'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent';
 
   /**
    * Generates a concise buyer requirement summary from lead inputs.
@@ -75,10 +75,10 @@ Output ONLY the concise summary text, without preamble, quotes, or markdown tags
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
             temperature: 0.2,
-            maxOutputTokens: 150,
+            maxOutputTokens: 1000,
           },
         }),
-        signal: AbortSignal.timeout(6000),
+        signal: AbortSignal.timeout(12000),
       });
 
       if (!response.ok) {
@@ -98,15 +98,15 @@ Output ONLY the concise summary text, without preamble, quotes, or markdown tags
         prompt,
         response: generatedText,
         status: 'SUCCESS',
-        provider: 'gemini-1.5-flash',
+        provider: 'gemini-3-flash',
         latencyMs,
       }).catch(() => {});
 
       return {
         content: generatedText,
         status: 'GENERATED',
-        provider: 'gemini-1.5-flash',
-        modelUsed: 'gemini-1.5-flash',
+        provider: 'gemini-3-flash',
+        modelUsed: 'gemini-3-flash-preview',
       };
     } catch (err: any) {
       console.warn(`[AIService] Gemini call failed (${err.message}). Using deterministic fallback.`);
@@ -168,10 +168,10 @@ Output ONLY the message body.`;
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
             temperature: 0.3,
-            maxOutputTokens: 250,
+            maxOutputTokens: 1000,
           },
         }),
-        signal: AbortSignal.timeout(6000),
+        signal: AbortSignal.timeout(12000),
       });
 
       if (!response.ok) {
@@ -191,15 +191,15 @@ Output ONLY the message body.`;
         prompt,
         response: generatedText,
         status: 'SUCCESS',
-        provider: 'gemini-1.5-flash',
+        provider: 'gemini-3-flash',
         latencyMs,
       }).catch(() => {});
 
       return {
         content: generatedText,
         status: 'GENERATED',
-        provider: 'gemini-1.5-flash',
-        modelUsed: 'gemini-1.5-flash',
+        provider: 'gemini-3-flash',
+        modelUsed: 'gemini-3-flash-preview',
       };
     } catch (err: any) {
       console.warn(`[AIService] Gemini first reply call failed (${err.message}). Using fallback.`);
