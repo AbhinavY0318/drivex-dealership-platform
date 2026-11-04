@@ -14,6 +14,7 @@ import {
   ChevronDown,
   Sparkles,
   Users,
+  FileText,
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -33,6 +34,7 @@ export const Navbar: React.FC = () => {
     { label: 'New Vehicles', path: '/vehicles', icon: Car },
     { label: 'Certified Used Cars', path: '/used-vehicles', icon: ShieldCheck },
     { label: 'Book Test Drive', path: '/book-test-drive', icon: CalendarCheck },
+    { label: 'Enquiry', path: '/enquiry', icon: FileText },
     { label: 'Showrooms', path: '/#showrooms', icon: Building2 },
   ];
 
