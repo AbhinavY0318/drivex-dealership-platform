@@ -3,7 +3,12 @@
 **Platform:** DriveX – Automotive Dealership Commerce & Lead Management Platform  
 **Target Enterprise:** Authorized Passenger Car Dealership (Lucknow, Uttar Pradesh, India)  
 **Dealership Scale:** 3 Showrooms, 2 Service Workshops, 1 Certified Used-Car Yard, 340 Employees  
-**Architecture:** MERN Stack (Node.js/Express, TypeScript, MongoDB, React, Tailwind CSS, Vite)
+**Architecture:** MERN Stack (Node.js/Express, TypeScript, MongoDB, React, Tailwind CSS, Vite)  
+
+### Live Production Deployments & Repository
+* **Live Production Web Application (Frontend on Vercel):** [https://client-theta-cyan-55.vercel.app/](https://client-theta-cyan-55.vercel.app/)
+* **Live Production REST API (Backend on Render):** [https://drivex-dealership-platform-api.onrender.com](https://drivex-dealership-platform-api.onrender.com)
+* **GitHub Repository:** [https://github.com/AbhinavY0318/drivex-dealership-platform.git](https://github.com/AbhinavY0318/drivex-dealership-platform.git)
 
 ---
 

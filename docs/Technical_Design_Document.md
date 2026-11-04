@@ -2,6 +2,8 @@
 ## DriveX – Automotive Dealership Commerce & Lead Management Platform
 
 **GitHub Repository:** https://github.com/AbhinavY0318/drivex-dealership-platform.git  
+**Live Production Application (Frontend):** https://client-theta-cyan-55.vercel.app/  
+**Live Production REST API (Backend):** https://drivex-dealership-platform-api.onrender.com  
 **Document Version:** 1.0.0  
 **Target Client:** Authorized Passenger Car Dealership (Lucknow, Uttar Pradesh, India)  
 **Dealership Scale:** 3 Showrooms, 2 Service Workshops, 1 Certified Used-Car Yard, 340 Staff  
@@ -672,11 +674,16 @@ Incoming Request
                                       └───────────────────────┘ └───────────────────┘
 ```
 
-### Production Deployment Blueprint
-- **Frontend Hosting:** Vercel / Netlify with automated continuous deployment from Git `main` branch. Single Page Application (SPA) rewrites configured in `vercel.json` (`rewrites: [{ source: "/(.*)", destination: "/index.html" }]`).
-- **Backend Hosting:** Render / Railway / AWS ECS containerized via multi-stage Docker build.
-- **Database Cluster:** MongoDB Atlas M10+ replica set in the `ap-south-1` (Mumbai) region for $< 30$ms latency to Lucknow.
-- **Zero-Config Local Development:** Built-in `MongoMemoryServer` initializes automatically if `MONGODB_URI` is omitted, eliminating developer onboarding hurdles.
+### Production Deployment Blueprint & Live Endpoints
+- **Live Frontend Application (Vercel):** [https://client-theta-cyan-55.vercel.app/](https://client-theta-cyan-55.vercel.app/)
+  - Deployed on Vercel with automated continuous deployment from Git `main` branch.
+  - Single Page Application (SPA) rewrites configured via `vercel.json` (`rewrites: [{ source: "/(.*)", destination: "/index.html" }]`) ensuring seamless direct client-side routing on page refreshes.
+- **Live Backend REST API (Render):** [https://drivex-dealership-platform-api.onrender.com](https://drivex-dealership-platform-api.onrender.com)
+  - Hosted as a Node.js Web Service on Render with automatic health-check probes (`/api/health`).
+  - Dual-mounted route architecture supporting both `/api/*` and root `/*` endpoints for maximum client resilience.
+- **Database Cluster (MongoDB Atlas):**
+  - MongoDB Atlas replica set cluster in the `ap-south-1` (Mumbai) region for $< 30$ms latency to Lucknow, encrypted at rest and in transit.
+- **Zero-Config Local Development:** Built-in in-memory database initializes automatically if `MONGODB_URI` is omitted, eliminating developer onboarding hurdles.
 
 ---
 

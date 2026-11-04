@@ -197,7 +197,7 @@ if (fs.existsSync(chromePath)) {
 
 console.log('[PDF Generator] Using browser:', browserPath);
 
-const cmd = `"${browserPath}" --headless --disable-gpu --run-all-compositor-stages-before-draw --no-pdf-header-footer --print-to-pdf="${pdfPath}" "${htmlPath}"`;
+const cmd = `"${browserPath}" --headless=new --disable-gpu --no-sandbox --run-all-compositor-stages-before-draw --no-pdf-header-footer --print-to-pdf="${pdfPath}" "${htmlPath}"`;
 console.log('[PDF Generator] Executing:', cmd);
 
 try {
