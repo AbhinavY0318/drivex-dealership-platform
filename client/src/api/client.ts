@@ -11,7 +11,8 @@ import {
   Showroom,
 } from '../types/index.js';
 
-const API_BASE = (import.meta.env.VITE_API_URL as string) || '/api';
+const RAW_API_BASE = (import.meta.env.VITE_API_URL as string) || '/api';
+const API_BASE = RAW_API_BASE.replace(/\/+$/, '');
 
 async function request<T>(
   endpoint: string,
