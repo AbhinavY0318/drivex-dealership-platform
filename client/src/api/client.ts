@@ -11,8 +11,12 @@ import {
   Showroom,
 } from '../types/index.js';
 
-const RAW_API_BASE = (import.meta.env.VITE_API_URL as string) || '/api';
-const API_BASE = RAW_API_BASE.replace(/\/+$/, '');
+let rawBase = ((import.meta.env.VITE_API_URL as string) || '/api').trim();
+rawBase = rawBase.replace(/\/+$/, '');
+if (rawBase !== '/api' && !rawBase.endsWith('/api')) {
+  rawBase = `${rawBase}/api`;
+}
+const API_BASE = rawBase;
 
 async function request<T>(
   endpoint: string,

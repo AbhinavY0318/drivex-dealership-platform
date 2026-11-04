@@ -53,8 +53,9 @@ export const createApp = () => {
 
   app.use('/api', apiLimiter);
 
-  // Mount API Routes
+  // Mount API Routes under /api (standard) and fallback at root /
   app.use('/api', routes);
+  app.use(routes);
 
   // 404 Handler
   app.use((req: Request, res: Response) => {
