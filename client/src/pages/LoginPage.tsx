@@ -2,33 +2,38 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.js';
 import { useToast } from '../context/ToastContext.js';
-import { Car, Lock, Mail, ArrowRight, ShieldCheck, UserCheck, Sparkles, Loader2 } from 'lucide-react';
+import { Car, Lock, Mail, ArrowRight, ShieldCheck, UserCheck, Sparkles, Loader2, LogOut } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
 
-  const { login } = useAuth();
+  const { user, isAuthenticated, login, logout } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const executeLogin = async (loginEmail: string, loginPass: string) => {
     setLoading(true);
     try {
-      await login({ email: email.trim(), password });
+      // Cleanly clear existing session if switching accounts
+      if (isAuthenticated) {
+        await logout();
+      }
+      await login({ email: loginEmail.trim(), password: loginPass });
       toast.success('Logged in successfully');
 
-      // Check role in token/state or redirect accordingly
-      const storedUser = localStorage.getItem('drivex_token');
-      if (email.includes('admin')) {
-        navigate('/admin');
-      } else if (email.includes('consultant') || email.includes('rohit') || email.includes('priya') || email.includes('amit') || email.includes('sneha')) {
-        navigate('/crm/leads');
-      } else {
-        navigate('/');
-      }
+      const target = loginEmail.includes('admin')
+        ? '/admin'
+        : loginEmail.includes('consultant') ||
+          loginEmail.includes('rohit') ||
+          loginEmail.includes('priya') ||
+          loginEmail.includes('amit') ||
+          loginEmail.includes('sneha')
+        ? '/crm/leads'
+        : '/';
+      // Use replace: true so /login is cleanly replaced in the browser history stack
+      navigate(target, { replace: true });
     } catch (err: any) {
       toast.error(err.message || 'Invalid email or password credentials');
     } finally {
@@ -36,15 +41,20 @@ export const LoginPage: React.FC = () => {
     }
   };
 
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await executeLogin(email, password);
+  };
+
   const handleQuickFill = (demoEmail: string, demoPass: string) => {
     setEmail(demoEmail);
     setPassword(demoPass);
-    toast.info(`Filled credentials for ${demoEmail}`);
+    executeLogin(demoEmail, demoPass);
   };
 
   return (
     <div className="min-h-[80vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="w-full max-w-md space-y-8 bg-white p-8 sm:p-10 rounded-3xl border border-slate-200/90 shadow-premium">
+      <div className="w-full max-w-md space-y-6 bg-white p-8 sm:p-10 rounded-3xl border border-slate-200/90 shadow-premium">
         {/* Header */}
         <div className="text-center space-y-2">
           <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center mx-auto text-white shadow-glow">
@@ -58,48 +68,101 @@ export const LoginPage: React.FC = () => {
           </p>
         </div>
 
+        {/* Active Session Warning & Switcher Banner */}
+        {isAuthenticated && user && (
+          <div className="p-4 rounded-2xl bg-amber-50/90 border border-amber-200/90 text-amber-950 space-y-2 animate-in fade-in">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800">
+                Active Session Detected
+              </span>
+              <span className="text-[10px] font-mono font-bold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded">
+                {user.role}
+              </span>
+            </div>
+            <p className="text-xs text-amber-900">
+              Currently signed in as <strong>{user.name}</strong> ({user.email}).
+            </p>
+            <div className="flex items-center gap-3 pt-1 text-xs">
+              <button
+                type="button"
+                onClick={async () => {
+                  await logout();
+                  toast.info('Logged out from current session');
+                }}
+                className="font-bold text-red-600 hover:text-red-700 underline flex items-center gap-1"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Log Out</span>
+              </button>
+              <span className="text-amber-300">•</span>
+              <Link
+                to={user.role === 'ADMIN' ? '/admin' : user.role === 'SALES_CONSULTANT' ? '/crm/leads' : '/'}
+                className="font-bold text-blue-700 hover:text-blue-800 underline"
+              >
+                Go to {user.role === 'ADMIN' ? 'Admin CMS' : 'CRM Leads'} &rarr;
+              </Link>
+            </div>
+          </div>
+        )}
+
         {/* Demo Quick-Fill Accounts Buttons */}
         <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5">
           <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
             <Sparkles className="w-3.5 h-3.5 text-blue-600" />
-            <span>Recruiter & Evaluator Quick Demo Logins:</span>
+            <span>1-Click Switch & Demo Sign In:</span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <button
               type="button"
+              disabled={loading}
               onClick={() => handleQuickFill('customer@drivex.in', 'Buyer@2026')}
-              className="p-2 rounded-xl text-left border border-slate-200 bg-white hover:bg-blue-50/50 hover:border-blue-300 transition-colors"
+              className="p-2.5 rounded-xl text-left border border-slate-200 bg-white hover:bg-blue-50/50 hover:border-blue-300 transition-all group"
             >
-              <strong className="block text-xs text-slate-900">Buyer Customer</strong>
-              <span className="text-[10px] text-slate-500 font-mono">customer@drivex.in</span>
+              <div className="flex items-center justify-between">
+                <strong className="block text-xs text-slate-900 group-hover:text-blue-600">Buyer Customer</strong>
+                <span className="text-[10px] text-blue-600 font-bold opacity-0 group-hover:opacity-100 transition-opacity">Login &rarr;</span>
+              </div>
+              <span className="text-[10px] text-slate-500 font-mono block truncate">customer@drivex.in</span>
             </button>
 
             <button
               type="button"
+              disabled={loading}
               onClick={() => handleQuickFill('priya.verma@drivex.in', 'Consultant@2026')}
-              className="p-2 rounded-xl text-left border border-slate-200 bg-white hover:bg-blue-50/50 hover:border-blue-300 transition-colors"
+              className="p-2.5 rounded-xl text-left border border-slate-200 bg-white hover:bg-blue-50/50 hover:border-blue-300 transition-all group"
             >
-              <strong className="block text-xs text-blue-700">Sales Consultant</strong>
-              <span className="text-[10px] text-slate-500 font-mono">priya.verma@drivex.in</span>
+              <div className="flex items-center justify-between">
+                <strong className="block text-xs text-blue-700 group-hover:text-blue-800">Sales Consultant</strong>
+                <span className="text-[10px] text-blue-600 font-bold opacity-0 group-hover:opacity-100 transition-opacity">Login &rarr;</span>
+              </div>
+              <span className="text-[10px] text-slate-500 font-mono block truncate">priya.verma@drivex.in</span>
             </button>
 
             <button
               type="button"
+              disabled={loading}
               onClick={() => handleQuickFill('rohit.sharma@drivex.in', 'Consultant@2026')}
-              className="p-2 rounded-xl text-left border border-slate-200 bg-white hover:bg-blue-50/50 hover:border-blue-300 transition-colors"
+              className="p-2.5 rounded-xl text-left border border-slate-200 bg-white hover:bg-blue-50/50 hover:border-blue-300 transition-all group"
             >
-              <strong className="block text-xs text-blue-700">Senior Consultant</strong>
-              <span className="text-[10px] text-slate-500 font-mono">rohit.sharma@drivex.in</span>
+              <div className="flex items-center justify-between">
+                <strong className="block text-xs text-blue-700 group-hover:text-blue-800">Senior Consultant</strong>
+                <span className="text-[10px] text-blue-600 font-bold opacity-0 group-hover:opacity-100 transition-opacity">Login &rarr;</span>
+              </div>
+              <span className="text-[10px] text-slate-500 font-mono block truncate">rohit.sharma@drivex.in</span>
             </button>
 
             <button
               type="button"
+              disabled={loading}
               onClick={() => handleQuickFill('admin@drivex.in', 'Admin@2026')}
-              className="p-2 rounded-xl text-left border border-slate-200 bg-white hover:bg-blue-50/50 hover:border-blue-300 transition-colors"
+              className="p-2.5 rounded-xl text-left border border-slate-200 bg-white hover:bg-indigo-50/50 hover:border-indigo-300 transition-all group"
             >
-              <strong className="block text-xs text-indigo-700">Dealership Admin</strong>
-              <span className="text-[10px] text-slate-500 font-mono">admin@drivex.in</span>
+              <div className="flex items-center justify-between">
+                <strong className="block text-xs text-indigo-700 group-hover:text-indigo-800">Dealership Admin</strong>
+                <span className="text-[10px] text-indigo-600 font-bold opacity-0 group-hover:opacity-100 transition-opacity">Login &rarr;</span>
+              </div>
+              <span className="text-[10px] text-slate-500 font-mono block truncate">admin@drivex.in</span>
             </button>
           </div>
         </div>
