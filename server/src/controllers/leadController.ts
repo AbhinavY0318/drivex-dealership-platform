@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import { Lead } from '../models/Lead.js';
 import { User } from '../models/User.js';
 import { LeadAssignmentService } from '../services/leadAssignmentService.js';
@@ -44,25 +45,39 @@ export class LeadController {
       const { status, search, priority, page = '1', limit = '20' } = req.query;
       const user = req.user!;
 
-      const query: any = {};
+      const andConditions: any[] = [];
 
-      // If user is a sales consultant, only show leads assigned to them or unassigned
+      // If user is a sales consultant, show leads assigned to them or unassigned
       if (user.role === 'SALES_CONSULTANT') {
-        query.$or = [{ assignedConsultantId: user.userId }, { status: 'NEW' }];
+        const userObjId = mongoose.isValidObjectId(user.userId)
+          ? new mongoose.Types.ObjectId(user.userId)
+          : user.userId;
+        andConditions.push({
+          $or: [
+            { assignedConsultantId: userObjId },
+            { assignedConsultantId: user.userId },
+            { status: 'NEW' },
+          ],
+        });
       }
 
       if (status && status !== 'ALL') {
-        query.status = status;
+        andConditions.push({ status });
       }
 
-      if (search && typeof search === 'string') {
-        query.$or = [
-          { leadNumber: { $regex: search, $options: 'i' } },
-          { customerName: { $regex: search, $options: 'i' } },
-          { email: { $regex: search, $options: 'i' } },
-          { phone: { $regex: search, $options: 'i' } },
-        ];
+      if (search && typeof search === 'string' && search.trim()) {
+        const s = search.trim();
+        andConditions.push({
+          $or: [
+            { leadNumber: { $regex: s, $options: 'i' } },
+            { customerName: { $regex: s, $options: 'i' } },
+            { email: { $regex: s, $options: 'i' } },
+            { phone: { $regex: s, $options: 'i' } },
+          ],
+        });
       }
+
+      const query = andConditions.length > 0 ? { $and: andConditions } : {};
 
       const pageNum = parseInt(page as string, 10) || 1;
       const limitNum = parseInt(limit as string, 10) || 20;

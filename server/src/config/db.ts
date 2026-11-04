@@ -20,8 +20,9 @@ export const connectDB = async (): Promise<string> => {
   try {
     const conn = await mongoose.connect(uri, {
       autoIndex: true,
+      dbName: 'drivex',
     });
-    console.log(`[Database] MongoDB connected successfully: ${conn.connection.host}`);
+    console.log(`[Database] MongoDB connected successfully to '${conn.connection.name}': ${conn.connection.host}`);
     return conn.connection.host;
   } catch (error) {
     console.error('[Database] Connection failed:', error);

@@ -1,4 +1,10 @@
 import dotenv from 'dotenv';
+import path from 'path';
+
+// Load root and server .env files in order of precedence
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+dotenv.config({ path: path.resolve(process.cwd(), '../.env') });
+dotenv.config({ path: path.resolve(process.cwd(), 'server/.env') });
 dotenv.config();
 
 export const config = {
