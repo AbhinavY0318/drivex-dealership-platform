@@ -13,6 +13,7 @@ import {
   X,
   ChevronDown,
   Sparkles,
+  Users,
 } from 'lucide-react';
 
 export const Navbar: React.FC = () => {
@@ -80,7 +81,7 @@ export const Navbar: React.FC = () => {
 
           {/* Action CTAs & Auth Controls */}
           <div className="hidden md:flex items-center gap-3">
-            {isAuthenticated && role === 'SALES_CONSULTANT' && (
+            {isAuthenticated && (role === 'SALES_CONSULTANT' || role === 'ADMIN') && (
               <Link
                 to="/crm/leads"
                 className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-blue-600/20 border border-blue-500/40 text-blue-400 hover:bg-blue-600 hover:text-white text-xs font-semibold uppercase tracking-wider transition-all"
@@ -146,14 +147,24 @@ export const Navbar: React.FC = () => {
                     )}
 
                     {user.role === 'ADMIN' && (
-                      <Link
-                        to="/admin"
-                        onClick={() => setUserDropdownOpen(false)}
-                        className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-slate-800"
-                      >
-                        <LayoutDashboard className="w-4 h-4 text-slate-400" />
-                        <span>Dealership Management</span>
-                      </Link>
+                      <>
+                        <Link
+                          to="/admin"
+                          onClick={() => setUserDropdownOpen(false)}
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-slate-800"
+                        >
+                          <LayoutDashboard className="w-4 h-4 text-slate-400" />
+                          <span>Dealership Management</span>
+                        </Link>
+                        <Link
+                          to="/crm/leads"
+                          onClick={() => setUserDropdownOpen(false)}
+                          className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-300 hover:text-white hover:bg-slate-800"
+                        >
+                          <Users className="w-4 h-4 text-blue-400" />
+                          <span>Sales CRM Leads</span>
+                        </Link>
+                      </>
                     )}
 
                     <button
@@ -224,7 +235,7 @@ export const Navbar: React.FC = () => {
                   <p className="font-semibold text-white">{user.name}</p>
                   <span className="text-xs text-blue-400 font-bold">{user.role}</span>
                 </div>
-                {role === 'SALES_CONSULTANT' && (
+                {(role === 'SALES_CONSULTANT' || role === 'ADMIN') && (
                   <Link
                     to="/crm/leads"
                     onClick={() => setMobileMenuOpen(false)}

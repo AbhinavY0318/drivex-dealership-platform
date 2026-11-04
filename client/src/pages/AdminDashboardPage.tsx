@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { api } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.js';
 import { useToast } from '../context/ToastContext.js';
@@ -19,6 +20,7 @@ import {
   CalendarCheck,
   Clock,
   Eye,
+  LayoutDashboard,
 } from 'lucide-react';
 
 export const AdminDashboardPage: React.FC = () => {
@@ -123,30 +125,40 @@ export const AdminDashboardPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Tab Controls */}
-        <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl overflow-x-auto">
-          {[
-            { id: 'analytics', label: 'Executive KPIs', icon: TrendingUp },
-            { id: 'pricing', label: 'City Pricing Engine', icon: Tag },
-            { id: 'staff', label: 'Staff & Workload', icon: Users },
-            { id: 'used', label: 'Used Inventory', icon: ShieldCheck },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as any)}
-                className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
-                  activeTab === tab.id
-                    ? 'bg-white text-indigo-900 shadow-sm'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <Icon className="w-3.5 h-3.5" />
-                <span>{tab.label}</span>
-              </button>
-            );
-          })}
+        {/* Tab Controls & CRM Shortcut */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Link
+            to="/crm/leads"
+            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition-colors shadow-sm"
+          >
+            <LayoutDashboard className="w-3.5 h-3.5" />
+            <span>Open Sales CRM Leads</span>
+          </Link>
+
+          <div className="flex items-center gap-2 bg-slate-100 p-1.5 rounded-2xl overflow-x-auto">
+            {[
+              { id: 'analytics', label: 'Executive KPIs', icon: TrendingUp },
+              { id: 'pricing', label: 'City Pricing Engine', icon: Tag },
+              { id: 'staff', label: 'Staff & Workload', icon: Users },
+              { id: 'used', label: 'Used Inventory', icon: ShieldCheck },
+            ].map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as any)}
+                  className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+                    activeTab === tab.id
+                      ? 'bg-white text-indigo-900 shadow-sm'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
